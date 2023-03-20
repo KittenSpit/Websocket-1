@@ -89,6 +89,7 @@ const char index_html[] PROGMEM = R"rawliteral(
      font-weight: bold;
    }
   </style>
+
 <title>ESP Web Server</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <link rel="icon" href="data:,">
@@ -103,7 +104,14 @@ const char index_html[] PROGMEM = R"rawliteral(
       <p class="state">state: <span id="state">%STATE%</span></p>
       <p><button id="button" class="button">Toggle</button></p>
     </div>
+    <p>
+    <div class="card">
+      <h2>Output - GPIO 3</h2>
+      <p class="state">state2: <span id="state2">%STATE2%</span></p>
+      <p><button id="button2" class="button">Toggle 2</button></p>
+    </div>
   </div>
+
 <script>
   var gateway = `ws://${window.location.hostname}/ws`;
   var websocket;
@@ -124,13 +132,20 @@ const char index_html[] PROGMEM = R"rawliteral(
   }
   function onMessage(event) {
     var state;
+    var state2;
     if (event.data == "1"){
-      state = "ON";
+      state = "Off";
+      state2 = "none";
     }
     else{
-      state = "OFF";
+      state = "On";
+      state2 = "some";
     }
+    if (event.data == "2"){
+      state2 = "WOW";
+    } 
     document.getElementById('state').innerHTML = state;
+    document.getElementById('state2').innerHTML = state2;   
   }
   function onLoad(event) {
     initWebSocket();
@@ -138,10 +153,15 @@ const char index_html[] PROGMEM = R"rawliteral(
   }
   function initButton() {
     document.getElementById('button').addEventListener('click', toggle);
+    document.getElementById('button2').addEventListener('click', toggle2);
   }
   function toggle(){
     websocket.send('toggle');
   }
+ function toggle2(){
+    websocket.send('xxxx');
+  }
+  
 </script>
 </body>
 </html>
@@ -149,6 +169,9 @@ const char index_html[] PROGMEM = R"rawliteral(
 
 void notifyClients() {
   ws.textAll(String(ledState));
+}
+void notifyClients2() {
+  ws.textAll(String(2));
 }
 
 void handleWebSocketMessage(void *arg, uint8_t *data, size_t len) {
@@ -158,6 +181,11 @@ void handleWebSocketMessage(void *arg, uint8_t *data, size_t len) {
     if (strcmp((char*)data, "toggle") == 0) {
       ledState = !ledState;
       notifyClients();
+    }
+    if (strcmp((char*)data, "xxxx") == 0) {
+      //ledState = !ledState;
+      notifyClients2();
+      Serial.println("2nd Button");
     }
   }
 }
@@ -189,10 +217,10 @@ String processor(const String& var){
   Serial.println(var);
   if(var == "STATE"){
     if (ledState){
-      return "ON";
+      return "off";
     }
     else{
-      return "OFF";
+      return "on";
     }
   }
   return String();
